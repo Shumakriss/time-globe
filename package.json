@@ -1,0 +1,36 @@
+{
+  "name": "time-globe",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "data:fetch": "tsx scripts/fetch-data.ts",
+    "data:build": "tsx scripts/build-data.ts",
+    "data": "npm run data:fetch && npm run data:build"
+  },
+  "dependencies": {
+    "earcut": "^3.2.4",
+    "geokdbush": "^2.1.0",
+    "kdbush": "^4.1.0",
+    "maplibre-gl": "^5.24.0",
+    "topojson-client": "^3.1.0"
+  },
+  "devDependencies": {
+    "@mapbox/polylabel": "^1.0.2",
+    "@types/earcut": "^3.2.4",
+    "@types/geojson": "^7946.0.16",
+    "@types/node": "^26.6.4",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
+    "mapshaper": "^0.7.80",
+    "polygon-clipping": "^0.15.7",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^6.4.4",
+    "vitest": "^3.2.7"
+  }
+}
