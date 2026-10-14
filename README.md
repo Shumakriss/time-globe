@@ -1,46 +1,112 @@
 # Time Globe
 
-A spinnable 3D globe with a time slider showing polities, empires, and cultures from 123,000 BCE to 2024 CE.
+**Spin the Earth and scroll through 125,000 years of human history.**
+
+Time Globe is a 3D globe with a time slider. As you move through time, empires, kingdoms and cultures
+grow, shrink, split and disappear across the map. Watch the Mongols spread out of the steppe, Rome rise
+and fracture, or the map of Europe redraw itself in the 1800s, one year at a time.
+
+![The Mongol Empire in 1227, with the far-side globe showing the Americas](docs/screenshot.jpg)
+
+## Highlights
+
+- **Nearly 1,600 polities, year by year.** Borders come from [Cliopatria](https://github.com/Seshat-Global-History-Databank/cliopatria),
+  a scholarly dataset of historical states from 3400 BCE to 2024, with prehistoric cultures back to
+  123,000 BCE from [historical-basemaps](https://github.com/aourednik/historical-basemaps).
+- **Smooth, living borders.** Territory doesn't just blink between dates. Conquests spread out from
+  the old frontier, losses recede, and land changing hands is swept over by the new owner's colour.
+  New powers grow out of their heartland. Documented border lines still snap to their recorded years,
+  so you always know what's real.
+- **Scroll through time.** Use the mouse wheel over the timeline, drag the slider, or press play
+  (½× to 100×). Era bands give you a sense of where you are.
+- **Find anything.** Search for a polity and the globe flies there. If it didn't exist in the year
+  you're looking at, time jumps to when it did.
+- **See both sides at once.** Turn on the far-side globe to keep an eye on the other hemisphere.
+- **Two looks.** *Map* colours give every polity a distinct hue. *Pretty* colours use one soft,
+  coordinated palette.
+- **Learn more.** Click any territory for its dates and a Wikipedia summary.
+
+## Quick start
+
+You need [Node.js](https://nodejs.org/) 20 or newer and `unzip` (preinstalled on macOS and most Linux).
 
 ```sh
-npm install
-npm run data   # downloads ~50 MB of source data (~230 MB on disk) and builds public/data/
-npm run dev
+git clone <this repo> time-globe
+cd time-globe
+npm run setup   # npm install + download and build the map data (one time, ~2 minutes)
+npm run dev     # open the URL it prints (usually http://localhost:5173)
 ```
 
-- **Globe:** drag to rotate, scroll over the globe to zoom, click a region for details.
-- **Borders vs. fills:** border lines are the documented records and snap on their year. Fills grow and
-  recede smoothly between records: gains spread out from the old border, losses recede toward the new
-  one, and land changing hands is replaced by the winner's colour along the same front.
-  A polity's first appearance grows out of its heartland in the years before its first record, and a
-  final record shrinks back toward it.
-- **Time:** scroll over the bottom bar (Shift = 10×), drag the slider, use ← →, or press Space / ▶ to play (½× to 100×). Click an era band to jump to it. The URL keeps the year (`#y=-500`).
-- **Search** (top left, or press `/`): pick a polity and the globe flies to it; if it didn't exist in the
-  current year, time moves to the nearest year it did.
-- **Colours:** *Map* gives every polity its own hue; *Pretty* uses one coordinated palette
-  (`src/palette.ts`), assigned at build time so bordering polities rarely share a colour.
-- **Far side:** a small second globe showing the opposite side of the world; click it to flip around.
-  Both globes share one mesh worker.
+### About the data download
 
-## Data
+The map data **isn't in the repository**. It's downloaded from its original open sources and processed
+on your machine. `npm run setup` does this for you. To run that step on its own:
+
+```sh
+npm run data
+```
+
+| What happens | Size |
+|---|---|
+| Downloads source data into `data-raw/` | ~50 MB download |
+| Unzips and processes it | ~310 MB in `data-raw/` |
+| Builds the files the app loads into `public/data/` | ~40 MB (~9 MB gzipped over the network) |
+
+It takes about 2 minutes and a few GB of RAM. Both folders are git-ignored, and existing downloads are
+skipped. You can delete `data-raw/` after a build if you don't plan to rebuild. Running
+`npm run dev` without the data prints a reminder instead of starting a blank app.
+
 | Source | Coverage | License |
 |---|---|---|
-| [Cliopatria](https://github.com/Seshat-Global-History-Databank/cliopatria) (Seshat) | ~1,600 polities, year-level borders, 3400 BCE–2024 | CC BY 4.0 |
-| [historical-basemaps](https://github.com/aourednik/historical-basemaps) | Prehistoric cultures, 5 snapshots before 3400 BCE | GPL-3.0 |
-| [Natural Earth](https://www.naturalearthdata.com/) | Land base layer | Public domain |
+| [Cliopatria](https://github.com/Seshat-Global-History-Databank/cliopatria) (Seshat Global History Databank) | ~1,600 polities, year-level borders, 3400 BCE–2024 | CC BY 4.0 |
+| [historical-basemaps](https://github.com/aourednik/historical-basemaps) (A. Ourednik) | Prehistoric cultures, 5 snapshots before 3400 BCE | GPL-3.0 |
+| [Natural Earth](https://www.naturalearthdata.com/) | Land outlines | Public domain |
+| [Wikipedia](https://en.wikipedia.org/) | Summaries in the info panel, fetched live | CC BY-SA |
 
-`scripts/lib/pieces.ts` splits each record into core / lost / gained pieces relative to the polity's next
-record, plus "yield" pieces where a neighbour's gain takes its land, and birth/death pieces measured from the
-polity's label point.
-Fills are drawn by a custom WebGL layer (`src/fills/`): a worker triangulates each time window and
-records each vertex's distance from the relevant border; the shader animates the growth front from a
-single year uniform, so motion costs nothing per frame. Borders and labels are ordinary MapLibre layers.
-Finer source data needs no client changes: shorter records simply produce shorter, smaller changes.
+## Controls
 
-`scripts/build-data.ts` simplifies each record (~2 km tolerance) and encodes everything as TopoJSON
-(`public/data/polities.topojson`, ~38 MB / ~8.7 MB gzipped including animation pieces). Consecutive-year records share borders,
-and TopoJSON stores shared arcs once. In the browser, MapLibre only receives records overlapping the current
-time window (`src/fills/windows.ts`; shorter windows in denser eras).
-Both data scripts refuse to proceed past 10 GB.
+| Action | How |
+|---|---|
+| Rotate / zoom the globe | Drag / scroll over the globe |
+| Move through time | Scroll over the timeline (Shift = 10×), drag the slider, or ← → |
+| Play / pause | Space or ▶, speed menu next to it |
+| Jump to an era | Click an era band |
+| Search | Click the search box or press `/` |
+| Details | Click a territory (Esc closes) |
+| Flip to the far side | Click the small globe |
 
-`npx tsx scripts/bench-mesh.ts [window…]` profiles fill-mesh building per window.
+The URL remembers the year (for example `#y=-500`), so you can share a moment in history.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `npm run setup` | Install dependencies and fetch and build the data |
+| `npm run dev` | Development server |
+| `npm run build` / `npm run preview` | Production build into `dist/` (includes the data) / serve it |
+| `npm test` | Unit tests |
+| `npm run data` | Fetch and build the data (`data:fetch` and `data:build` run each half) |
+
+## How it works
+
+- **Rendering:** [MapLibre GL](https://maplibre.org/) in globe projection. Borders and labels are
+  regular MapLibre layers that show the records for the current year.
+- **Fills:** territory fills are a custom WebGL layer (`src/fills/`). A web worker triangulates each
+  time window and stores, per vertex, how far it is from the relevant border. The shader animates
+  every growth front from a single "year" value, so scrubbing and playback cost almost nothing per
+  frame.
+- **Data build** (`scripts/build-data.ts`):
+  - Simplifies the records (to ~2 km).
+  - Works out the animated pieces for each change (`scripts/lib/pieces.ts`): land kept, lost, gained,
+    or yielded to a neighbour, plus births and deaths.
+  - Assigns the pretty-palette colours.
+  - Packs everything as TopoJSON, so shared borders are stored once.
+
+More detail for contributors is in [CLAUDE.md](CLAUDE.md).
+
+## Caveats
+
+Historical borders are approximations, and the dataset is uneven. Well-documented states are mapped
+in detail. Nomadic and tribal peoples are often missing, which can leave regions grey (the Mongolian
+steppe before 1206, for instance). The animations between documented years are for visual effect and
+aren't historical claims.

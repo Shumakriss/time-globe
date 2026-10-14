@@ -4,13 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "setup": "npm install && npm run data",
+    "predev": "tsx scripts/check-data.ts",
     "dev": "vite",
+    "prebuild": "tsx scripts/check-data.ts",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "data": "npm run data:fetch && npm run data:build",
     "data:fetch": "tsx scripts/fetch-data.ts",
-    "data:build": "tsx scripts/build-data.ts",
-    "data": "npm run data:fetch && npm run data:build"
+    "data:build": "tsx scripts/build-data.ts"
   },
   "dependencies": {
     "earcut": "^3.2.4",
@@ -32,5 +35,9 @@
     "typescript": "^7.0.2",
     "vite": "^6.4.4",
     "vitest": "^3.2.7"
-  }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "description": "A spinnable 3D globe showing empires, kingdoms and cultures expanding and contracting from 123,000 BCE to today."
 }
