@@ -15,6 +15,17 @@
   <body>
     <div id="map"></div>
     <div id="loading">Loading history…</div>
+    <div id="toolbar">
+      <div id="search"></div>
+      <div class="toggles">
+        <button id="scheme-toggle" class="toggle" aria-pressed="false">Colours: Map</button>
+        <button id="far-toggle" class="toggle" aria-pressed="false" title="Show the other side of the world">Far side</button>
+      </div>
+    </div>
+    <div id="far-side" hidden>
+      <div class="far-map" title="The other side of the world — click to flip"></div>
+      <span class="far-caption">Far side</span>
+    </div>
     <aside id="info" hidden></aside>
     <footer id="timeline"></footer>
     <script type="module" src="/src/main.ts"></script>

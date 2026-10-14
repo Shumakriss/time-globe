@@ -25,7 +25,10 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-export function createInfoPanel(el: HTMLElement): (props: PolityProps | null) => void {
+export function createInfoPanel(
+  el: HTMLElement,
+  colorOf: (props: PolityProps) => string,
+): (props: PolityProps | null) => void {
   let token = 0;
   const close = () => {
     el.hidden = true;
@@ -43,7 +46,7 @@ export function createInfoPanel(el: HTMLElement): (props: PolityProps | null) =>
     const source = props.src === 'clio' ? 'Cliopatria (Seshat)' : 'historical-basemaps';
     el.innerHTML = `
       <button class="info-close" aria-label="Close">×</button>
-      <div class="info-swatch" style="background:${props.color}"></div>
+      <div class="info-swatch" style="background:${colorOf(props)}"></div>
       <h2>${escapeHtml(props.name)}</h2>
       <p class="info-span">${span}</p>
       <div class="info-body">${props.wiki ? '<p class="info-muted">Loading summary…</p>' : ''}</div>

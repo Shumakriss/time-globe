@@ -22,16 +22,20 @@ export interface FillItem {
   end: number;
   rs: number; // growth ramp, in display years
   re: number;
-  color: [number, number, number]; // 0..1
-  /** For animated kinds: the border the front spreads from (gained/yield) or recedes toward (lost). */
+  color: [number, number, number]; // 0..1, "map" scheme
+  pal: number; // "pretty" palette slot
+  /**
+   * For animated kinds: the border the front spreads from (gained/yield) or recedes toward (lost).
+   * A single point (births and deaths) makes the front a circle around it.
+   */
   reference?: { key: number; polygons: Position[][][] };
   /** Items with the same front key share one distance scale, so a gain and its yields move together. */
   front?: number;
 }
 
 // Interleaved vertex layout (floats).
-export const VERTEX_FLOATS = 12;
-// x, y (mercator 0..1), d (0..1 front distance), kind, rs, re, from, end, r, g, b, rid
+export const VERTEX_FLOATS = 13;
+// x, y (mercator 0..1), d (0..1 front distance), kind, rs, re, from, end, r, g, b, rid, pal
 
 export interface Mesh {
   vertices: Float32Array;
@@ -228,7 +232,7 @@ function meshItem(item: FillItem, field: ((lng: number, lat: number) => number) 
         if (d > maxD) maxD = d;
         v[o++] = mercatorX(lng); v[o++] = mercatorY(lat); v[o++] = d; v[o++] = item.kind;
         v[o++] = item.rs; v[o++] = item.re; v[o++] = item.from; v[o++] = item.end;
-        v[o++] = r; v[o++] = g; v[o++] = b; v[o++] = item.rid;
+        v[o++] = r; v[o++] = g; v[o++] = b; v[o++] = item.rid; v[o++] = item.pal;
       }
       verts.length = o;
       for (const t of triangles) idx.push(base + t);

@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import polylabel from '@mapbox/polylabel';
 import { simplifyGeometry } from './lib/simplify.ts';
 import { buildPieces } from './lib/pieces.ts';
+import { assignPalette } from './lib/palette.ts';
+import { PALETTE_SIZE } from '../src/palette.ts';
 import type { Feature, FeatureCollection, MultiPolygon, Polygon, Position } from 'geojson';
 
 const RAW = 'data-raw';
@@ -16,7 +18,7 @@ const BASEMAP_YEARS = [-123000, -10000, -8000, -5000, -4000];
 const CLIO_START = -3400;
 
 // Geometry budget: ~2 km tolerance, ~1 km coordinate grid, drop islets under ~25 km².
-const SIMPLIFY_TOL = 0.02; // degrees // degrees // degrees // degrees
+const SIMPLIFY_TOL = 0.02; // degrees
 const PRECISION = 0.01; // degrees
 const MIN_POLY_AREA = 0.002; // deg²
 
@@ -28,6 +30,7 @@ export interface PolityProps {
   src: 'clio' | 'basemaps';
   wiki: string;
   color: string;
+  pal?: number; // slot in the "pretty" palette (src/palette.ts)
   area: number;
   split?: boolean; // solid fill comes from core piece(s) instead of the record itself
 }
@@ -138,6 +141,7 @@ function main() {
 
   // Label points from simplified geometry: polylabel of each feature's largest polygon.
   const labels: Feature[] = [];
+  const origins = new Map<number, Position>();
   for (const f of simplified) {
     if (!f.geometry) continue;
     let best: Position[][] | null = null;
@@ -154,6 +158,7 @@ function main() {
     if (!best) continue;
     const pt = polylabel(best as number[][][], 0.05);
     const p = f.properties;
+    origins.set(p.id, [pt[0], pt[1]]);
     if (!p.area) p.area = Math.round(total);
     labels.push({
       type: 'Feature',
@@ -162,9 +167,16 @@ function main() {
     });
   }
 
+  // "Pretty" palette slots, chosen so neighbours differ.
+  const slots = assignPalette(simplified, PALETTE_SIZE);
+  for (const f of simplified) f.properties.pal = slots.get(f.properties.name) ?? 0;
+
   // Fill pieces for interpolating each record toward the polity's next record.
   const t0 = Date.now();
-  const { pieces, split, stats: pieceStats } = buildPieces(simplified);
+  const { pieces, split, stats: pieceStats } = buildPieces(simplified, origins, {
+    min: Math.min(...simplified.map((f) => f.properties.from)),
+    max: Math.max(...simplified.map((f) => f.properties.to)),
+  });
   for (const f of simplified) if (split.has(f.properties.id)) f.properties.split = true;
   console.log(`Built ${pieces.length} pieces in ${((Date.now() - t0) / 1000).toFixed(1)}s`, pieceStats);
 

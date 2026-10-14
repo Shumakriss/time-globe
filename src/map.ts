@@ -17,6 +17,7 @@ export interface PolityProps {
   src: 'clio' | 'basemaps';
   wiki: string;
   color: string;
+  pal?: number;
   area: number;
 }
 
@@ -32,13 +33,17 @@ function yearConditions(year: number): ExpressionSpecification[] {
 
 const HOVER: ExpressionSpecification = ['boolean', ['feature-state', 'hover'], false];
 
-export function createMap(container: string): maplibregl.Map {
+export function createMap(
+  container: string | HTMLElement,
+  options: Partial<maplibregl.MapOptions> = {},
+): maplibregl.Map {
   return new maplibregl.Map({
     container,
     center: [30, 30],
     zoom: 2.2,
     keyboard: false, // arrow keys scrub time instead
-    attributionControl: {
+    ...options,
+    attributionControl: options.attributionControl ?? {
       compact: true,
       customAttribution: [
         '<a href="https://github.com/Seshat-Global-History-Databank/cliopatria">Cliopatria</a> (Seshat, CC BY 4.0)',

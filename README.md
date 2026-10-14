@@ -12,7 +12,15 @@ npm run dev
 - **Borders vs. fills:** border lines are the documented records and snap on their year. Fills grow and
   recede smoothly between records: gains spread out from the old border, losses recede toward the new
   one, and land changing hands is replaced by the winner's colour along the same front.
-- **Time:** scroll over the bottom bar (Shift = 10×), drag the slider, use ← →, or press Space / ▶ to play. Click an era band to jump to it. The URL keeps the year (`#y=-500`).
+  A polity's first appearance grows out of its heartland in the years before its first record, and a
+  final record shrinks back toward it.
+- **Time:** scroll over the bottom bar (Shift = 10×), drag the slider, use ← →, or press Space / ▶ to play (½× to 100×). Click an era band to jump to it. The URL keeps the year (`#y=-500`).
+- **Search** (top left, or press `/`): pick a polity and the globe flies to it; if it didn't exist in the
+  current year, time moves to the nearest year it did.
+- **Colours:** *Map* gives every polity its own hue; *Pretty* uses one coordinated palette
+  (`src/palette.ts`), assigned at build time so bordering polities rarely share a colour.
+- **Far side:** a small second globe showing the opposite side of the world; click it to flip around.
+  Both globes share one mesh worker.
 
 ## Data
 | Source | Coverage | License |
@@ -22,14 +30,15 @@ npm run dev
 | [Natural Earth](https://www.naturalearthdata.com/) | Land base layer | Public domain |
 
 `scripts/lib/pieces.ts` splits each record into core / lost / gained pieces relative to the polity's next
-record, plus "yield" pieces where a neighbour's gain takes its land (births, deaths and gaps snap).
+record, plus "yield" pieces where a neighbour's gain takes its land, and birth/death pieces measured from the
+polity's label point.
 Fills are drawn by a custom WebGL layer (`src/fills/`): a worker triangulates each time window and
 records each vertex's distance from the relevant border; the shader animates the growth front from a
 single year uniform, so motion costs nothing per frame. Borders and labels are ordinary MapLibre layers.
 Finer source data needs no client changes: shorter records simply produce shorter, smaller changes.
 
 `scripts/build-data.ts` simplifies each record (~2 km tolerance) and encodes everything as TopoJSON
-(`public/data/polities.topojson`, ~34 MB / ~7.5 MB gzipped including animation pieces). Consecutive-year records share borders,
+(`public/data/polities.topojson`, ~38 MB / ~8.7 MB gzipped including animation pieces). Consecutive-year records share borders,
 and TopoJSON stores shared arcs once. In the browser, MapLibre only receives records overlapping the current
 time window (`src/fills/windows.ts`; shorter windows in denser eras).
 Both data scripts refuse to proceed past 10 GB.

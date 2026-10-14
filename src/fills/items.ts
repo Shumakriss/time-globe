@@ -8,6 +8,7 @@ export interface RecordProps {
   from: number;
   to: number;
   color: string;
+  pal?: number;
   split?: boolean;
 }
 export interface PieceProps {
@@ -20,6 +21,7 @@ export interface PieceProps {
   to: number;
   rs: number;
   re: number;
+  o?: Position; // births/deaths grow from / shrink toward this point
   color: string;
 }
 
@@ -49,13 +51,14 @@ export function collectItems(
       rs: p.to + 1,
       re: p.to + 1,
       color: parseColor(p.color),
+      pal: p.pal ?? 0,
     });
   }
   for (const f of pieces) {
     const p = f.properties;
     if (!overlaps(p) || !f.geometry) continue;
     // Gains (and the yields they cause) spread from the old border; losses recede toward the new one.
-    const ref = p.k === KIND_SOLID ? undefined : byId.get(p.ref);
+    const ref = p.k === KIND_SOLID || p.o ? undefined : byId.get(p.ref);
     items.push({
       key: `p${p.pid}`,
       polygons: polygonsOf(f.geometry),
@@ -66,7 +69,12 @@ export function collectItems(
       rs: p.rs,
       re: p.re,
       color: parseColor(p.color),
-      reference: ref?.geometry ? { key: p.ref, polygons: polygonsOf(ref.geometry) } : undefined,
+      pal: byId.get(p.rid)?.properties.pal ?? 0,
+      reference: p.o
+        ? { key: -p.front, polygons: [[[p.o]]] } // a point: distances measured from the heartland
+        : ref?.geometry
+          ? { key: p.ref, polygons: polygonsOf(ref.geometry) }
+          : undefined,
       front: p.front,
     });
   }

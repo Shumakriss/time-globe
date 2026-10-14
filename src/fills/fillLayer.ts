@@ -4,12 +4,14 @@
 import type maplibregl from 'maplibre-gl';
 import type { CustomLayerInterface, CustomRenderMethodInput } from 'maplibre-gl';
 import { VERTEX_FLOATS } from './mesh';
-import type { BuildResult, FocusRequest } from './meshWorker';
+import type { MeshFeed } from './meshFeed';
 import { prefetchYears, WINDOW_COUNT, windowOf, windowRange } from './windows';
+import { PALETTE, PALETTE_SIZE, type ColorScheme } from '../palette';
 
 const FILL_OPACITY = 0.6;
 const FRONT_SOFTNESS = 0.35; // width of the growth front, as a fraction of the ramp
 const MAX_CACHED_WINDOWS = 4;
+const SCHEME_FADE_MS = 500;
 
 const VERTEX_SHADER = (prelude: string, define: string) => `#version 300 es
 precision highp float;
@@ -22,8 +24,11 @@ in vec2 a_ramp;
 in vec2 a_span;
 in vec3 a_color;
 in float a_rid;
+in float a_pal;
 uniform float u_year;
 uniform float u_hover;
+uniform float u_scheme; // 0 = map colours, 1 = pretty palette
+uniform vec3 u_palette[${PALETTE_SIZE}];
 out float v_d;
 out float v_kind;
 out float v_t;
@@ -37,7 +42,7 @@ void main() {
   v_d = a_d;
   v_kind = a_kind;
   v_t = clamp((u_year - a_ramp.x) / max(0.001, a_ramp.y - a_ramp.x), 0.0, 1.0);
-  v_color = a_color;
+  v_color = mix(a_color, u_palette[int(a_pal + 0.5)], u_scheme);
   v_hover = abs(a_rid - u_hover) < 0.5 ? 1.0 : 0.0;
   gl_Position = projectTile(a_pos);
 }`;
@@ -82,10 +87,15 @@ interface GpuMesh {
 export interface FillLayer extends CustomLayerInterface {
   setYear(displayYear: number): void;
   setHover(recordId: number | null): void;
+  setScheme(scheme: ColorScheme, animate?: boolean): void;
 }
 
-export function createFillLayer(map: maplibregl.Map, onFirstMesh: () => void): FillLayer {
-  const worker = new Worker(new URL('./meshWorker.ts', import.meta.url), { type: 'module' });
+export function createFillLayer(
+  map: maplibregl.Map,
+  feed: MeshFeed,
+  options: { id?: string; scheme: ColorScheme; onFirstMesh?: () => void },
+): FillLayer {
+  const self = {};
   let gl: WebGL2RenderingContext | null = null;
   const programs = new Map<string, { program: WebGLProgram; uniforms: Record<string, WebGLUniformLocation | null> }>();
   const meshes = new Map<number, GpuMesh>(); // window -> mesh, in LRU order
@@ -95,6 +105,12 @@ export function createFillLayer(map: maplibregl.Map, onFirstMesh: () => void): F
   let hover = -1;
   let gotFirst = false;
   let lastFocus = '';
+  // Colour scheme crossfade: 0 = map, 1 = pretty.
+  let schemeFrom = options.scheme === 'pretty' ? 1 : 0;
+  let schemeTo = schemeFrom;
+  let schemeT0 = 0;
+  const paletteFlat = new Float32Array(PALETTE.flat());
+  let unsubscribe = () => {};
 
   /** Ask the worker for the windows we'll need, most urgent first; it drops anything stale. */
   const focus = () => {
@@ -113,14 +129,19 @@ export function createFillLayer(map: maplibregl.Map, onFirstMesh: () => void): F
     const key = wanted.join(',');
     if (key === lastFocus) return;
     lastFocus = key;
-    worker.postMessage({ type: 'focus', windows: wanted } satisfies FocusRequest);
+    feed.request(self, wanted);
   };
 
-  worker.onmessage = (e: MessageEvent<BuildResult>) => {
-    const { window: w, vertices, indices, ms } = e.data;
+  const onBuilt = ({ window: w, vertices, indices, ms }: { window: number; vertices: Float32Array; indices: Uint32Array; ms: number }) => {
     lastFocus = '';
     if (!gl) return;
     if (import.meta.env.DEV) console.debug(`[fills] window ${w}: ${vertices.length / VERTEX_FLOATS} verts in ${ms}ms`);
+    const old = meshes.get(w);
+    if (old) {
+      meshes.delete(w);
+      if (old === lastDrawn) lastDrawn = undefined;
+      release(gl, old);
+    }
     meshes.set(w, upload(gl, w, vertices, indices));
     // Evict the oldest meshes, never the one on screen.
     for (const [key, m] of meshes) {
@@ -131,7 +152,7 @@ export function createFillLayer(map: maplibregl.Map, onFirstMesh: () => void): F
     }
     if (!gotFirst) {
       gotFirst = true;
-      onFirstMesh();
+      options.onFirstMesh?.();
     }
     map.triggerRepaint();
   };
@@ -155,6 +176,7 @@ export function createFillLayer(map: maplibregl.Map, onFirstMesh: () => void): F
       [4, 2, 6], // a_span
       [5, 3, 8], // a_color
       [6, 1, 11], // a_rid
+      [7, 1, 12], // a_pal
     ];
     for (const [loc, size, offset] of attrs) {
       g.enableVertexAttribArray(loc);
@@ -183,11 +205,11 @@ export function createFillLayer(map: maplibregl.Map, onFirstMesh: () => void): F
     const program = g.createProgram()!;
     g.attachShader(program, shader(g.VERTEX_SHADER, VERTEX_SHADER(shaderData.vertexShaderPrelude, shaderData.define)));
     g.attachShader(program, shader(g.FRAGMENT_SHADER, FRAGMENT_SHADER));
-    ['a_pos', 'a_d', 'a_kind', 'a_ramp', 'a_span', 'a_color', 'a_rid'].forEach((n, i) => g.bindAttribLocation(program, i, n));
+    ['a_pos', 'a_d', 'a_kind', 'a_ramp', 'a_span', 'a_color', 'a_rid', 'a_pal'].forEach((n, i) => g.bindAttribLocation(program, i, n));
     g.linkProgram(program);
     if (!g.getProgramParameter(program, g.LINK_STATUS)) throw new Error(g.getProgramInfoLog(program) ?? 'link error');
     const names = [
-      'u_year', 'u_hover', 'u_opacity', 'u_softness',
+      'u_year', 'u_hover', 'u_opacity', 'u_softness', 'u_scheme', 'u_palette',
       'u_projection_matrix', 'u_projection_tile_mercator_coords', 'u_projection_clipping_plane',
       'u_projection_transition', 'u_projection_fallback_matrix',
     ];
@@ -212,19 +234,21 @@ export function createFillLayer(map: maplibregl.Map, onFirstMesh: () => void): F
   }
 
   return {
-    id: 'territory-fills',
+    id: options.id ?? 'territory-fills',
     type: 'custom',
     renderingMode: '2d',
 
     onAdd(_map, context) {
       gl = context as WebGL2RenderingContext;
+      unsubscribe = feed.subscribe(self, onBuilt);
       focus();
     },
 
     onRemove() {
-      worker.terminate();
+      unsubscribe();
       if (gl) for (const m of meshes.values()) release(gl, m);
       meshes.clear();
+      lastDrawn = undefined;
     },
 
     render(g, options) {
@@ -239,6 +263,11 @@ export function createFillLayer(map: maplibregl.Map, onFirstMesh: () => void): F
       g2.uniform1f(u.u_hover, hover);
       g2.uniform1f(u.u_opacity, FILL_OPACITY);
       g2.uniform1f(u.u_softness, FRONT_SOFTNESS);
+      const fade = Math.min(1, (performance.now() - schemeT0) / SCHEME_FADE_MS);
+      const eased = fade * fade * (3 - 2 * fade);
+      g2.uniform1f(u.u_scheme, schemeFrom + (schemeTo - schemeFrom) * eased);
+      if (fade < 1) map.triggerRepaint();
+      g2.uniform3fv(u.u_palette, paletteFlat);
       g2.uniformMatrix4fv(u.u_projection_matrix, false, pd.mainMatrix as Float32Array);
       g2.uniform4f(u.u_projection_tile_mercator_coords, ...pd.tileMercatorCoords);
       g2.uniform4f(u.u_projection_clipping_plane, ...pd.clippingPlane);
@@ -263,6 +292,15 @@ export function createFillLayer(map: maplibregl.Map, onFirstMesh: () => void): F
 
     setHover(recordId: number | null) {
       hover = recordId ?? -1;
+      map.triggerRepaint();
+    },
+
+    setScheme(scheme: ColorScheme, animate = true) {
+      const target = scheme === 'pretty' ? 1 : 0;
+      const fade = Math.min(1, (performance.now() - schemeT0) / SCHEME_FADE_MS);
+      schemeFrom = animate ? schemeFrom + (schemeTo - schemeFrom) * fade * fade * (3 - 2 * fade) : target;
+      schemeTo = target;
+      schemeT0 = performance.now();
       map.triggerRepaint();
     },
   };

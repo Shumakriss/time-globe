@@ -7,7 +7,9 @@ const SLIDER_RES = 100000;
 const TICKS = [-100000, -10000, -5000, -3000, -2000, -1000, 1, 1000, 2000];
 // Playback speeds in wheel-steps per second (1 step = 1 yr in recorded history, more in prehistory).
 const SPEEDS = [
+  { label: '½×', steps: 1 },
   { label: '1×', steps: 2 },
+  { label: '2×', steps: 4 },
   { label: '5×', steps: 10 },
   { label: '25×', steps: 50 },
   { label: '100×', steps: 200 },
@@ -19,7 +21,7 @@ export function createTimeline(root: HTMLElement): void {
     <div class="tl-controls">
       <button class="tl-play" aria-label="Play">▶</button>
       <select class="tl-speed" aria-label="Playback speed">
-        ${SPEEDS.map((s, i) => `<option value="${i}" ${i === 1 ? 'selected' : ''}>${s.label}</option>`).join('')}
+        ${SPEEDS.map((s, i) => `<option value="${i}" ${s.label === '5×' ? 'selected' : ''}>${s.label}</option>`).join('')}
       </select>
       <div class="tl-readout">
         <span class="tl-year"></span>
