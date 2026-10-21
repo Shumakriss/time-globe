@@ -7,18 +7,21 @@ import { join } from 'node:path';
 const RAW = 'data-raw';
 const MAX_BYTES = 10 * 1024 ** 3; // 10 GB — larger requires user approval
 
-const BASEMAPS = 'https://raw.githubusercontent.com/aourednik/historical-basemaps/master/geojson';
+// Sources are pinned to upstream commits so the data only changes when these are bumped.
+const CLIOPATRIA = 'https://raw.githubusercontent.com/Seshat-Global-History-Databank/cliopatria/5f433377139a6eeaeacbdc894b70f8805b72c8b5';
+const NATURAL_EARTH = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19';
+const BASEMAPS = 'https://raw.githubusercontent.com/aourednik/historical-basemaps/da7a4b735ecef70aebdc9c73e409d8a2500d50f3/geojson';
 // Prehistoric snapshots only; Cliopatria takes over at 3400 BCE.
 export const BASEMAP_YEARS = [-123000, -10000, -8000, -5000, -4000];
 
 const files: { name: string; url: string }[] = [
   {
     name: 'cliopatria.geojson.zip',
-    url: 'https://raw.githubusercontent.com/Seshat-Global-History-Databank/cliopatria/main/cliopatria.geojson.zip',
+    url: `${CLIOPATRIA}/cliopatria.geojson.zip`,
   },
   {
     name: 'ne_50m_land.geojson',
-    url: 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_land.geojson',
+    url: `${NATURAL_EARTH}/geojson/ne_50m_land.geojson`,
   },
   ...BASEMAP_YEARS.map((y) => ({
     name: `world_bc${-y}.geojson`,

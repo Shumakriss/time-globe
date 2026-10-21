@@ -22,7 +22,7 @@ export interface BuildResult {
 type Poly = Polygon | MultiPolygon;
 
 const ready: Promise<{ records: Feature<Poly, RecordProps>[]; pieces: Feature<Poly, PieceProps>[] }> = (async () => {
-  const topo = (await (await fetch(new URL('/data/polities.topojson', self.location.origin))).json()) as Topology;
+  const topo = (await (await fetch(new URL(`${import.meta.env.BASE_URL}data/polities.topojson`, self.location.origin))).json()) as Topology;
   const records = (feature(topo, topo.objects.polities) as FeatureCollection<Poly, RecordProps>).features;
   const pieces = (feature(topo, topo.objects.pieces) as FeatureCollection<Poly, PieceProps>).features;
   return { records, pieces };

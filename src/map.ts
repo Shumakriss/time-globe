@@ -45,10 +45,14 @@ export function createMap(
     ...options,
     attributionControl: options.attributionControl ?? {
       compact: true,
+      // Replaces MapLibre's default attribution, so it credits MapLibre itself too.
       customAttribution: [
+        '<a href="https://maplibre.org/">MapLibre</a>',
         '<a href="https://github.com/Seshat-Global-History-Databank/cliopatria">Cliopatria</a> (Seshat, CC BY 4.0)',
         '<a href="https://github.com/aourednik/historical-basemaps">historical-basemaps</a> (GPL-3.0)',
         '<a href="https://www.naturalearthdata.com/">Natural Earth</a>',
+        '<a href="https://en.wikipedia.org/">Wikipedia</a> (CC BY-SA 4.0)',
+        '<a href="https://github.com/Shumakriss/time-globe#credits">All credits</a>',
       ],
     },
     style: {

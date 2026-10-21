@@ -72,6 +72,12 @@ src/
   means editing `scripts/lib/*` and re-running `npm run data:build`. The client only reads the result.
 - **Data size:** `polities.topojson` is ~38 MB (~9 MB gzipped). Keep an eye on it when adding piece
   types or lowering the simplification tolerance.
+- **The site is served from a sub-path.** GitHub Pages hosts it at `/time-globe/`. The deploy
+  workflow (`.github/workflows/deploy.yml`) passes that path to `vite.config.ts` as `BASE_PATH`.
+  Load app files with relative URLs or with `import.meta.env.BASE_URL`, never with a leading `/`.
+  To test it, run `BASE_PATH=/time-globe npm run build && BASE_PATH=/time-globe npm run preview`.
+- **Data sources are pinned** to upstream commits in `scripts/fetch-data.ts`. Bumping a pin changes
+  the deploy cache key, so the next deploy downloads fresh data.
 - **The browser can't fully check fills.** Headless checks need real WebGL (for example
   playwright-core with system Chrome and `--use-angle=metal` on macOS). In development the page
   exposes `window.__map` and `window.__jump(year)` for scripted checks. `#y=<year>` in the URL sets

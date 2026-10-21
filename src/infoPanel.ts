@@ -68,6 +68,8 @@ export function createInfoPanel(
         ${s.thumbnail ? `<img src="${s.thumbnail.source}" alt="" />` : ''}
         <p>${escapeHtml(s.extract)}</p>
         ${link ? `<a href="${link}" target="_blank" rel="noopener">Read on Wikipedia →</a>` : ''}
+        <p class="info-source">Summary from Wikipedia,
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></p>
       `;
     });
   };

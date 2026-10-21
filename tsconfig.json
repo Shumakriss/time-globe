@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src", "tests", "scripts"]
+  "include": ["src", "tests", "scripts", "vite.config.ts"]
 }

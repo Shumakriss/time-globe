@@ -6,6 +6,8 @@ Time Globe is a 3D globe with a time slider. As you move through time, empires, 
 grow, shrink, split and disappear across the map. Watch the Mongols spread out of the steppe, Rome rise
 and fracture, or the map of Europe redraw itself in the 1800s, one year at a time.
 
+**Try it: [shumakriss.github.io/time-globe](https://shumakriss.github.io/time-globe/)**
+
 ![The Mongol Empire in 1227, with the far-side globe showing the Americas](docs/screenshot.jpg)
 
 ## Highlights
@@ -103,6 +105,45 @@ The URL remembers the year (for example `#y=-500`), so you can share a moment in
   - Packs everything as TopoJSON, so shared borders are stored once.
 
 More detail for contributors is in [CLAUDE.md](CLAUDE.md).
+
+## Deployment
+
+Every push to `main` deploys to GitHub Pages through `.github/workflows/deploy.yml`. The workflow
+downloads and builds the data, runs the tests, builds the site and publishes `dist/`. Raw downloads
+are cached between runs. The data sources are pinned to upstream commits in `scripts/fetch-data.ts`,
+so the published data only changes when you update those pins. You can also start a deploy by hand
+from the Actions tab ("Run workflow").
+
+## Credits
+
+Time Globe is built on the work of these projects and people.
+
+**Data**
+
+| Source | Used for | License |
+|---|---|---|
+| [Cliopatria](https://github.com/Seshat-Global-History-Databank/cliopatria) by the [Seshat Global History Databank](https://seshat-db.com/) | Polity borders, 3400 BCE–2024 | CC BY 4.0 |
+| [historical-basemaps](https://github.com/aourednik/historical-basemaps) by André Ourednik | Prehistoric cultures before 3400 BCE | GPL-3.0 |
+| [Natural Earth](https://www.naturalearthdata.com/) | Land outlines | Public domain |
+| [Wikipedia](https://en.wikipedia.org/) via the [Wikimedia REST API](https://en.wikipedia.org/api/rest_v1/) | Summaries and images in the info panel | Text CC BY-SA 4.0; images vary |
+
+**Software**
+
+| Project | Used for | License |
+|---|---|---|
+| [MapLibre GL JS](https://maplibre.org/) | Globe rendering, borders and labels | BSD-3-Clause |
+| [MapLibre demo tiles](https://github.com/maplibre/demotiles) | Label glyphs (Open Sans) | Open Sans: OFL / Apache-2.0 |
+| [mapshaper](https://github.com/mbloch/mapshaper) | Geometry processing in the data build | MPL-2.0 |
+| [TopoJSON](https://github.com/topojson/topojson-client) | Compact shared-border data format | ISC |
+| [earcut](https://github.com/mapbox/earcut) | Polygon triangulation for the fill layer | ISC |
+| [polylabel](https://github.com/mapbox/polylabel) | Label placement | ISC |
+| [kdbush](https://github.com/mourner/kdbush) / [geokdbush](https://github.com/mourner/geokdbush) | Spatial indexing | ISC |
+| [Vite](https://vite.dev/), [TypeScript](https://www.typescriptlang.org/), [Vitest](https://vitest.dev/) | Build, language and tests | MIT / Apache-2.0 / MIT |
+
+**Fonts:** [Cormorant Garamond](https://fonts.google.com/specimen/Cormorant+Garamond) and
+[Inter](https://fonts.google.com/specimen/Inter) from Google Fonts (SIL Open Font License).
+
+**Hosting:** [GitHub Pages](https://pages.github.com/).
 
 ## Caveats
 
